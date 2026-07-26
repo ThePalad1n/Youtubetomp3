@@ -1,0 +1,48 @@
+[project]
+name = "yt2audio"
+version = "0.1.0"
+description = "Reusable core library for extracting audio/video from yt-dlp-supported sites, including playlist batches and Spotify-export-to-YouTube matching."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "yt-dlp>=2024.1.0",
+    "rapidfuzz>=3.0",
+]
+
+[project.optional-dependencies]
+cli = ["click>=8.1"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov",
+    "mypy",
+    "ruff",
+]
+
+[project.scripts]
+yt2audio = "yt2audio.cli:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: real network/yt-dlp tests, excluded by default",
+]
+addopts = "-m 'not integration'"
+testpaths = ["tests"]
+
+[tool.ruff.lint]
+# BLE001 (blind except Exception) is ignored deliberately: per-item error
+# isolation in extractor.py/spotify_flow.py must catch anything the injected
+# YtdlpClient (real or fake-in-tests) can raise and turn it into a FAILED
+# ExtractionResult rather than aborting a batch - see errors.py docstring.
+ignore = ["BLE001"]
+
+[[tool.mypy.overrides]]
+# yt-dlp ships no official type stubs.
+module = "yt_dlp.*"
+ignore_missing_imports = true
