@@ -1,0 +1,6 @@
+# exported playlist - one track per line
+1. Twenty One Pilots - Blurryface Anthem
+2) The Simple Band - Simple Song
+3. Artist With - A Hyphen - The Actual Title
+
+no delimiter here at all

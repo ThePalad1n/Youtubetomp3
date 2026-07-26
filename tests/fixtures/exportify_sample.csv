@@ -1,0 +1,4 @@
+Track URI,Track Name,Artist Name(s),Album Name,Track Duration (ms),Added By,Added At
+spotify:track:1abcXYZ,Blurryface Anthem,Twenty One Pilots,Blurryface,214000,user123,2023-01-01T00:00:00Z
+spotify:track:2defXYZ,Simple Song,The Simple Band,Simple Album,180000,user123,2023-01-02T00:00:00Z
+spotify:track:3ghiXYZ,,Unknown Artist,,,user123,2023-01-03T00:00:00Z
