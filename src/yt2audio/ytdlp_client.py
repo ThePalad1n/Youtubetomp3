@@ -76,6 +76,8 @@ class YtdlpClient:
             opts["cookiefile"] = str(config.cookies_file)
         if config.proxy is not None:
             opts["proxy"] = config.proxy
+        if config.no_cache:
+            opts["cachedir"] = False
         if extra_opts:
             opts.update(extra_opts)
         return opts
