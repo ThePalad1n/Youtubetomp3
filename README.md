@@ -14,8 +14,9 @@ testing.
 ## Requirements
 
 - Python >= 3.10
-- [ffmpeg](https://ffmpeg.org/) on your `PATH` (used by yt-dlp to
-  extract/remux audio and video). On Debian/Ubuntu: `apt-get install ffmpeg`.
+- [ffmpeg](https://ffmpeg.org/) on your `PATH`, used by yt-dlp to extract/remux
+  audio and video. Windows: `winget install --id Gyan.FFmpeg`. Debian/Ubuntu:
+  `apt-get install ffmpeg`. macOS: `brew install ffmpeg`.
 
 ## Install
 
@@ -24,6 +25,32 @@ pip install -e .            # core library only
 pip install -e ".[cli]"     # + the `yt2audio` CLI
 pip install -e ".[dev]"     # + test/lint tooling
 ```
+
+## Local use on Windows
+
+For running this on a Windows PC as a CLI, there are two scripts so you don't
+have to touch a virtual environment by hand:
+
+1. `setup.bat`, run once. It finds Python, creates a `.venv`, installs the CLI
+   into it, and tells you whether ffmpeg is on your `PATH`. If ffmpeg is
+   missing it prints the `winget install --id Gyan.FFmpeg` line; run that,
+   open a new terminal so `PATH` refreshes, then re-run `setup.bat`.
+2. `run.bat`, for every download. It calls the CLI out of the `.venv`, so the
+   arguments are the same ones documented below:
+
+```bat
+run.bat single "https://www.youtube.com/watch?v=..." --format mp3
+run.bat single "https://www.youtube.com/watch?v=..." --video
+run.bat batch urls.txt --no-cache
+```
+
+Turn the VPN on before you download. A whole-machine VPN routes yt-dlp's fetch
+without any flag, so the request to Google's CDN leaves the VPN's egress IP
+instead of your home connection's. If you'd rather route one download through
+a proxy instead of the whole machine, pass `--proxy socks5://127.0.0.1:1080`
+(or whatever your proxy is). Add `--no-cache` to stop yt-dlp writing its
+extractor cache under `%APPDATA%\yt-dlp`, so a run leaves nothing on disk once
+the file is moved out of `downloads`.
 
 ## Library usage
 
@@ -86,9 +113,17 @@ yt2audio batch <FILE_OF_URLS_OR_RAW_TEXT>
 yt2audio spotify <EXPORT_FILE> [--min-confidence 0.55]
 ```
 
+Flags on every command:
+
+- `--proxy socks5://host:port` routes the fetch through a proxy. Leave it off
+  when a whole-machine VPN is already up.
+- `--cookies path\to\cookies.txt` passes a Netscape-format cookies file for
+  videos that refuse to serve a stream without sign-in.
+- `--no-cache` disables yt-dlp's on-disk cache for that run.
+
 Add `--json` to any command to print the full structured results instead of
-a summary - useful for scripting against this as if it were already the API
-of an integrating service.
+a summary, which is useful for scripting against this as if it were already
+the API of an integrating service.
 
 ## Testing
 

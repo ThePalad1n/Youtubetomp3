@@ -31,6 +31,12 @@ class ExtractionConfig:
     quiet: bool = True
     restrict_filenames: bool = False
 
+    # When True, disables yt-dlp's on-disk cache (default under
+    # %APPDATA%\yt-dlp on Windows, ~/.cache/yt-dlp elsewhere) so a run leaves
+    # no signature/extractor cache behind. The whole-machine VPN handles
+    # network egress; this handles the local trace.
+    no_cache: bool = False
+
     # Spotify-matching only
     match_min_confidence: float = 0.55
     search_results_to_consider: int = 5

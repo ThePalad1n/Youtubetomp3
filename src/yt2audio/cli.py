@@ -48,17 +48,33 @@ def _common_options(func):
     func = click.option("--bitrate", default=192, type=int, help="Audio bitrate in kbps.")(func)
     func = click.option("--video", is_flag=True, default=False, help="Download mp4 video instead of audio.")(func)
     func = click.option("--concurrency", default=3, type=int, help="Max concurrent downloads for batch/playlist.")(func)
+    func = click.option("--proxy", default=None, help="Route yt-dlp through a proxy (e.g. socks5://127.0.0.1:1080). Leave off when a whole-machine VPN is up.")(func)
+    func = click.option("--cookies", "cookies_file", default=None, type=click.Path(exists=True, dir_okay=False), help="Cookies file (Netscape format) for videos that require sign-in.")(func)
+    func = click.option("--no-cache", "no_cache", is_flag=True, default=False, help="Disable yt-dlp's on-disk cache so the run leaves no local trace.")(func)
     func = click.option("--json", "as_json", is_flag=True, default=False, help="Print results as JSON.")(func)
     return func
 
 
-def _build_config(output_dir: str, audio_format: str, bitrate: int, video: bool, concurrency: int, **extra) -> ExtractionConfig:
+def _build_config(
+    output_dir: str,
+    audio_format: str,
+    bitrate: int,
+    video: bool,
+    concurrency: int,
+    proxy: str | None = None,
+    cookies_file: str | None = None,
+    no_cache: bool = False,
+    **extra,
+) -> ExtractionConfig:
     return ExtractionConfig(
         output_dir=Path(output_dir),
         download_kind="video" if video else "audio",
         audio_format=audio_format,
         audio_bitrate_kbps=bitrate,
         max_concurrent=concurrency,
+        proxy=proxy,
+        cookies_file=Path(cookies_file) if cookies_file else None,
+        no_cache=no_cache,
         **extra,
     )
 
@@ -73,9 +89,9 @@ def main() -> None:
 @main.command()
 @click.argument("url")
 @_common_options
-def single(url: str, output_dir: str, audio_format: str, bitrate: int, video: bool, concurrency: int, as_json: bool) -> None:
+def single(url: str, output_dir: str, audio_format: str, bitrate: int, video: bool, concurrency: int, proxy: str | None, cookies_file: str | None, no_cache: bool, as_json: bool) -> None:
     """Extract audio/video from a single URL."""
-    config = _build_config(output_dir, audio_format, bitrate, video, concurrency)
+    config = _build_config(output_dir, audio_format, bitrate, video, concurrency, proxy, cookies_file, no_cache)
     result = extract_single(url, config)
     _print_summary([result], as_json)
     sys.exit(0 if result.status.value in ("success", "skipped") else 1)
@@ -84,9 +100,9 @@ def single(url: str, output_dir: str, audio_format: str, bitrate: int, video: bo
 @main.command()
 @click.argument("playlist_url")
 @_common_options
-def playlist(playlist_url: str, output_dir: str, audio_format: str, bitrate: int, video: bool, concurrency: int, as_json: bool) -> None:
+def playlist(playlist_url: str, output_dir: str, audio_format: str, bitrate: int, video: bool, concurrency: int, proxy: str | None, cookies_file: str | None, no_cache: bool, as_json: bool) -> None:
     """Extract audio/video for every item in a playlist URL."""
-    config = _build_config(output_dir, audio_format, bitrate, video, concurrency)
+    config = _build_config(output_dir, audio_format, bitrate, video, concurrency, proxy, cookies_file, no_cache)
     results = extract_playlist(playlist_url, config)
     _print_summary(results, as_json)
 
@@ -94,9 +110,9 @@ def playlist(playlist_url: str, output_dir: str, audio_format: str, bitrate: int
 @main.command()
 @click.argument("source")
 @_common_options
-def batch(source: str, output_dir: str, audio_format: str, bitrate: int, video: bool, concurrency: int, as_json: bool) -> None:
+def batch(source: str, output_dir: str, audio_format: str, bitrate: int, video: bool, concurrency: int, proxy: str | None, cookies_file: str | None, no_cache: bool, as_json: bool) -> None:
     """Extract audio/video for a text file (or blob) of URLs, one per line."""
-    config = _build_config(output_dir, audio_format, bitrate, video, concurrency)
+    config = _build_config(output_dir, audio_format, bitrate, video, concurrency, proxy, cookies_file, no_cache)
     result: BatchResult = extract_from_text(source, config)
     _print_summary(result.results, as_json)
 
@@ -107,6 +123,9 @@ def batch(source: str, output_dir: str, audio_format: str, bitrate: int, video: 
 @click.option("--format", "audio_format", default="mp3")
 @click.option("--bitrate", default=192, type=int)
 @click.option("--concurrency", default=3, type=int)
+@click.option("--proxy", default=None, help="Route yt-dlp through a proxy. Leave off when a whole-machine VPN is up.")
+@click.option("--cookies", "cookies_file", default=None, type=click.Path(exists=True, dir_okay=False), help="Cookies file for sign-in-gated searches.")
+@click.option("--no-cache", "no_cache", is_flag=True, default=False, help="Disable yt-dlp's on-disk cache.")
 @click.option("--min-confidence", default=0.55, type=float, help="Minimum match confidence to accept a download.")
 @click.option("--json", "as_json", is_flag=True, default=False)
 def spotify(
@@ -115,12 +134,16 @@ def spotify(
     audio_format: str,
     bitrate: int,
     concurrency: int,
+    proxy: str | None,
+    cookies_file: str | None,
+    no_cache: bool,
     min_confidence: float,
     as_json: bool,
 ) -> None:
     """Match tracks from a Spotify playlist export (CSV or text) on YouTube and download audio."""
     config = _build_config(
-        output_dir, audio_format, bitrate, False, concurrency, match_min_confidence=min_confidence
+        output_dir, audio_format, bitrate, False, concurrency, proxy, cookies_file, no_cache,
+        match_min_confidence=min_confidence,
     )
     result = extract_from_spotify_export(export_file, config)
     _print_summary(result.results, as_json)
